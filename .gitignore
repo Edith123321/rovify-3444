@@ -45,11 +45,6 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Custom folders to exclude for now. Will be pushed to GitHub later.
-/lib
-/assets
-
-
 # Firebase configs and secrets. These will be revisited!
 android/app/google-services.json
 android/key.properties
@@ -57,3 +52,6 @@ ios/Runner/GoogleService-Info.plist
 lib/firebase_options.dart
 firebase.json
 .env
+
+# VS Code settings folder
+.vscode/
