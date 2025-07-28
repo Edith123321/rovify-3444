@@ -38,13 +38,10 @@ class ProfileDrawer extends StatelessWidget {
                 CircleAvatar(
                   radius: 30,
                   backgroundColor: avatarColor,
-                  backgroundImage:
-                      avatarUrl != null ? NetworkImage(avatarUrl!) : null,
+                  backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl!) : null,
                   child: avatarUrl == null
                       ? Text(
-                          displayName.isNotEmpty
-                              ? displayName[0].toUpperCase()
-                              : '?',
+                          displayName.isNotEmpty ? displayName[0].toUpperCase() : '?',
                           style: const TextStyle(
                             fontSize: 30,
                             fontWeight: FontWeight.bold,
@@ -66,11 +63,7 @@ class ProfileDrawer extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   email,
-                  style: const TextStyle(
-                    fontFamily: 'Onest',
-                    fontSize: 14,
-                    color: Colors.black54,
-                  ),
+                  style: const TextStyle(fontFamily: 'Onest', fontSize: 14, color: Colors.black54),
                 ),
                 if (walletAddress != null) ...[
                   const SizedBox(height: 4),
@@ -94,34 +87,15 @@ class ProfileDrawer extends StatelessWidget {
               child: Wrap(
                 spacing: 8,
                 children: interests!
-                    .map((tag) => Chip(
-                          label: Text(tag),
-                          backgroundColor: Colors.grey[200],
-                        ))
+                    .map((tag) => Chip(label: Text(tag), backgroundColor: Colors.grey[200]))
                     .toList(),
               ),
             ),
 
-          _buildMenuItem(
-            context,
-            icon: Icons.auto_graph,
-            title: 'Vibemeter',
-          ),
-          _buildMenuItem(
-            context,
-            icon: Icons.account_balance_wallet,
-            title: 'DAO',
-          ),
-          _buildMenuItem(
-            context,
-            icon: Icons.wallet,
-            title: 'Wallet',
-          ),
-          _buildMenuItem(
-            context,
-            icon: Icons.settings,
-            title: 'Settings & Privacy',
-          ),
+          _buildMenuItem(context, icon: Icons.auto_graph, title: 'Vibemeter'),
+          _buildMenuItem(context, icon: Icons.account_balance_wallet, title: 'DAO'),
+          _buildMenuItem(context, icon: Icons.wallet, title: 'Wallet'),
+          _buildMenuItem(context, icon: Icons.settings, title: 'Settings & Privacy'),
 
           const Divider(height: 1),
 
@@ -133,10 +107,7 @@ class ProfileDrawer extends StatelessWidget {
               title: 'Creator Dashboard',
               onTap: () {
                 context.pop(); // close drawer
-                context.pushNamed(
-                  'creatorDashboard',
-                  extra: userId,
-                );
+                context.pushNamed('creatorDashboard', extra: userId);
               },
             ),
             _buildMenuItem(
@@ -150,13 +121,17 @@ class ProfileDrawer extends StatelessWidget {
             ),
             const Divider(height: 1),
           ] else ...[
+            // Inside your ProfileDrawer widget (unchanged except for the navigation part)
             _buildMenuItem(
               context,
               icon: Icons.add_circle_outline,
               title: 'Become a Creator',
               onTap: () {
                 context.pop(); // close drawer
-                context.pushNamed('becomeCreator');
+                context.pushNamed(
+                  'becomeCreator',
+                  extra: userId, // Pass the userId as extra
+                );
               },
             ),
             const Divider(height: 1),
@@ -187,11 +162,7 @@ class ProfileDrawer extends StatelessWidget {
       leading: Icon(icon, color: color ?? Colors.black),
       title: Text(
         title,
-        style: TextStyle(
-          fontFamily: 'Onest',
-          fontSize: 16,
-          color: color ?? Colors.black,
-        ),
+        style: TextStyle(fontFamily: 'Onest', fontSize: 16, color: color ?? Colors.black),
       ),
       onTap: onTap ?? () => context.pop(),
     );

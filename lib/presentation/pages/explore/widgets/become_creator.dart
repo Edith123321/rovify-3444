@@ -1,50 +1,110 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:rovify/core/theme/app_theme.dart';
+import 'package:rovify/core/theme/utils/validators.dart';
+import 'package:rovify/core/widgets/loading_button.dart';
 
 class BecomeCreatorScreen extends StatefulWidget {
-  const BecomeCreatorScreen({super.key});
+  final String userId;
+  const BecomeCreatorScreen({super.key, required this.userId});
 
   @override
   State<BecomeCreatorScreen> createState() => _BecomeCreatorScreenState();
 }
 
 class _BecomeCreatorScreenState extends State<BecomeCreatorScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _firestore = FirebaseFirestore.instance;
+  
+  // Form state
   bool _acceptedTerms = false;
   bool _isSubmitting = false;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  String? _creatorCategory;
 
-  Future<void> _becomeCreator() async {
+  // Controllers
+  final _bioController = TextEditingController();
+  final _portfolioController = TextEditingController();
+  final _instagramController = TextEditingController();
+  final _twitterController = TextEditingController();
+
+  @override
+  void dispose() {
+    _bioController.dispose();
+    _portfolioController.dispose();
+    _instagramController.dispose();
+    _twitterController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submitCreatorApplication() async {
+    if (!_formKey.currentState!.validate()) return;
     if (!_acceptedTerms) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please accept the terms to continue')),
-      );
+      _showError('Please accept the terms and conditions');
       return;
     }
 
     setState(() => _isSubmitting = true);
-    
-    try {
-      final user = _auth.currentUser;
-      if (user == null) return;
 
-      await _firestore.collection('users').doc(user.uid).update({
+    try {
+      // Create a batch to perform multiple writes atomically
+      final batch = _firestore.batch();
+
+      // Update user document
+      final userRef = _firestore.collection('users').doc(widget.userId);
+      batch.update(userRef, {
         'isCreator': true,
         'creatorSince': FieldValue.serverTimestamp(),
+        'creatorStatus': 'approved', // Auto-approve in this implementation
       });
 
-      Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('You are now a creator!')),
-      );
+      // Create creator document
+      final creatorRef = _firestore.collection('creators').doc(widget.userId);
+      batch.set(creatorRef, {
+        'bio': _bioController.text.trim(),
+        'portfolioUrl': _portfolioController.text.trim(),
+        'category': _creatorCategory,
+        'socials': {
+          'instagram': _instagramController.text.trim(),
+          'twitter': _twitterController.text.trim(),
+        },
+        'eventsHosted': [],
+        'walletConnected': false, // Can be updated later
+        'createdAt': FieldValue.serverTimestamp(),
+        'userRef': userRef, // Reference to the user document
+      });
+
+      // Commit the batch
+      await batch.commit();
+
+      if (!mounted) return;
+      
+      // Navigate to creator dashboard
+      Navigator.pushReplacementNamed(context, 'creatorDashboard');
+      
+      _showSuccess('You are now a creator!');
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
-      );
+      _showError('Failed to submit application: ${e.toString()}');
     } finally {
-      setState(() => _isSubmitting = false);
+      if (mounted) setState(() => _isSubmitting = false);
     }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
+  void _showSuccess(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+      ),
+    );
   }
 
   @override
@@ -56,76 +116,113 @@ class _BecomeCreatorScreenState extends State<BecomeCreatorScreen> {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Creator Terms & Conditions',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'By becoming a creator on Rovify, you agree to the following terms:',
-              style: TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 15),
-            _buildTermItem('1. You are responsible for the events you create.'),
-            _buildTermItem('2. All events must comply with our community guidelines.'),
-            _buildTermItem('3. You must provide accurate information about your events.'),
-            _buildTermItem('4. Rovify may take a commission on ticket sales.'),
-            _buildTermItem('5. You must respond to attendee inquiries in a timely manner.'),
-            const SizedBox(height: 30),
-            Row(
-              children: [
-                Checkbox(
-                  value: _acceptedTerms,
-                  onChanged: (value) => setState(() => _acceptedTerms = value ?? false),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Bio Field
+              TextFormField(
+                controller: _bioController,
+                decoration: const InputDecoration(
+                  labelText: 'Creator Bio',
+                  hintText: 'Tell us about yourself as a creator',
                 ),
-                const Expanded(
-                  child: Text(
-                    'I agree to the terms and conditions of becoming a Rovify creator',
-                    style: TextStyle(fontSize: 14),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 30),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _isSubmitting ? null : _becomeCreator,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  backgroundColor: Colors.orange,
-                  disabledBackgroundColor: Colors.orange.withOpacity(0.5),
-                ),
-                child: _isSubmitting
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text(
-                        'BECOME A CREATOR',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
+                maxLines: 3,
+                validator: Validators.requiredField,
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+              const SizedBox(height: 20),
 
-  Widget _buildTermItem(String text) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('• '),
-          Expanded(child: Text(text)),
-        ],
+              // Portfolio URL
+              TextFormField(
+                controller: _portfolioController,
+                decoration: const InputDecoration(
+                  labelText: 'Portfolio URL',
+                  hintText: 'Link to your work or social media',
+                ),
+                keyboardType: TextInputType.url,
+                validator: Validators.validateUrl,
+              ),
+              const SizedBox(height: 20),
+
+              // Social Media Fields
+              TextFormField(
+                controller: _instagramController,
+                decoration: const InputDecoration(
+                  labelText: 'Instagram Handle',
+                  hintText: '@yourhandle',
+                  prefixText: '@',
+                ),
+              ),
+              const SizedBox(height: 15),
+              
+              TextFormField(
+                controller: _twitterController,
+                decoration: const InputDecoration(
+                  labelText: 'Twitter Handle',
+                  hintText: '@yourhandle',
+                  prefixText: '@',
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Category Dropdown
+              DropdownButtonFormField<String>(
+                value: _creatorCategory,
+                decoration: const InputDecoration(
+                  labelText: 'Primary Category',
+                ),
+                items: const [
+                  DropdownMenuItem(value: 'music', child: Text('Music')),
+                  DropdownMenuItem(value: 'art', child: Text('Art')),
+                  DropdownMenuItem(value: 'gaming', child: Text('Gaming')),
+                  DropdownMenuItem(value: 'education', child: Text('Education')),
+                  DropdownMenuItem(value: 'other', child: Text('Other')),
+                ],
+                onChanged: (value) => setState(() => _creatorCategory = value),
+                validator: Validators.requiredField,
+              ),
+              const SizedBox(height: 30),
+
+              // Terms and Conditions
+              const Text(
+                'Creator Terms & Conditions',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'By becoming a creator, you agree to our community guidelines and terms of service. '
+                'You are responsible for the content you create and events you organize.',
+                style: TextStyle(fontSize: 14, color: Colors.grey),
+              ),
+              const SizedBox(height: 15),
+
+              // Terms Checkbox
+              Row(
+                children: [
+                  Checkbox(
+                    value: _acceptedTerms,
+                    onChanged: (value) => setState(() => _acceptedTerms = value ?? false),
+                  ),
+                  const Expanded(
+                    child: Text(
+                      'I accept the terms and conditions',
+                      style: TextStyle(fontSize: 14),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 30),
+
+              // Submit Button
+              LoadingButton(
+                isLoading: _isSubmitting,
+                onPressed: _submitCreatorApplication,
+                text: 'BECOME A CREATOR NOW',
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
