@@ -48,7 +48,7 @@ class RovifyApp extends StatelessWidget {
     return MaterialApp.router(
       title: 'Rovify',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
+      theme: AppTheme.light,
       routerConfig: AppRouter.router,
     );
   }
