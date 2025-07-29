@@ -92,6 +92,17 @@ class ProfileDrawer extends StatelessWidget {
               ),
             ),
 
+          // ✨ New Menu Item: Edit Profile
+          _buildMenuItem(
+            context,
+            icon: Icons.edit,
+            title: 'Edit Profile',
+            onTap: () {
+              context.pop(); // Close drawer
+              context.pushNamed('updateProfile'); // Navigate to /updateProfile
+            },
+          ),
+
           _buildMenuItem(context, icon: Icons.auto_graph, title: 'Vibemeter'),
           _buildMenuItem(context, icon: Icons.account_balance_wallet, title: 'DAO'),
           _buildMenuItem(context, icon: Icons.wallet, title: 'Wallet'),
@@ -106,7 +117,7 @@ class ProfileDrawer extends StatelessWidget {
               icon: Icons.dashboard,
               title: 'Creator Dashboard',
               onTap: () {
-                context.pop(); // close drawer
+                context.pop();
                 context.pushNamed('creatorDashboard', extra: userId);
               },
             ),
@@ -115,23 +126,19 @@ class ProfileDrawer extends StatelessWidget {
               icon: Icons.add_circle_outline,
               title: 'Create Event',
               onTap: () {
-                context.pop(); // close drawer
+                context.pop();
                 context.pushNamed('addEvent');
               },
             ),
             const Divider(height: 1),
           ] else ...[
-            // Inside your ProfileDrawer widget (unchanged except for the navigation part)
             _buildMenuItem(
               context,
               icon: Icons.add_circle_outline,
               title: 'Become a Creator',
               onTap: () {
-                context.pop(); // close drawer
-                context.pushNamed(
-                  'becomeCreator',
-                  extra: userId, // Pass the userId as extra
-                );
+                context.pop();
+                context.pushNamed('becomeCreator', extra: userId);
               },
             ),
             const Divider(height: 1),

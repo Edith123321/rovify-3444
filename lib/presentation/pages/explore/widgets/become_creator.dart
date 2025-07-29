@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:rovify/core/theme/app_theme.dart';
 import 'package:rovify/core/theme/utils/validators.dart';
 import 'package:rovify/core/widgets/loading_button.dart';
+import 'package:rovify/presentation/pages/explore/explore_page.dart';
 
 class BecomeCreatorScreen extends StatefulWidget {
   final String userId;
@@ -67,10 +67,10 @@ class _BecomeCreatorScreenState extends State<BecomeCreatorScreen> {
           'instagram': _instagramController.text.trim(),
           'twitter': _twitterController.text.trim(),
         },
-        'eventsHosted': [],
+        'eventsHosted': [], // Initialize empty array, will be populated by events where host=userID
         'walletConnected': false, // Can be updated later
         'createdAt': FieldValue.serverTimestamp(),
-        'userRef': userRef, // Reference to the user document
+        'userID': widget.userId, // Store the userID directly instead of reference
       });
 
       // Commit the batch
@@ -78,10 +78,18 @@ class _BecomeCreatorScreenState extends State<BecomeCreatorScreen> {
 
       if (!mounted) return;
       
-      // Navigate to creator dashboard
-      Navigator.pushReplacementNamed(context, 'creatorDashboard');
+      // Show success message
+      _showSuccess('You are now a creator! Redirecting to explore page...');
       
-      _showSuccess('You are now a creator!');
+      // Redirect to explore page after a short delay
+      await Future.delayed(const Duration(seconds: 2));
+      if (!mounted) return;
+      
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const ExplorePage()),
+        (route) => false,
+      );
     } catch (e) {
       _showError('Failed to submit application: ${e.toString()}');
     } finally {
@@ -218,8 +226,8 @@ class _BecomeCreatorScreenState extends State<BecomeCreatorScreen> {
               LoadingButton(
                 isLoading: _isSubmitting,
                 onPressed: _submitCreatorApplication,
-                text: 'BECOME A CREATOR NOW',
-              ),
+                text: 'Submit Application',
+              ), 
             ],
           ),
         ),
