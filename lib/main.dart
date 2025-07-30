@@ -1,41 +1,57 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'package:rovify/core/theme/app_theme.dart';
 import 'package:rovify/data/firebase/firebase_initializer.dart';
+
+import 'package:rovify/data/datasources/auth_remote_datasource.dart';
 import 'package:rovify/data/datasources/event_remote_datasource.dart';
 import 'package:rovify/data/repositories/auth_repository_impl.dart';
 import 'package:rovify/data/repositories/event_repository_impl.dart';
-import 'package:rovify/domain/usecases/sign_in_user.dart';
+
 import 'package:rovify/domain/usecases/sign_up_user.dart';
+import 'package:rovify/domain/usecases/sign_in_user.dart';
 import 'package:rovify/domain/usecases/events/get_upcoming_events.dart';
 import 'package:rovify/domain/usecases/events/toggle_event_favorite.dart';
+
 import 'package:rovify/presentation/blocs/auth/auth_bloc.dart';
 import 'package:rovify/presentation/blocs/auth/auth_state.dart';
 import 'package:rovify/presentation/blocs/events/event_bloc.dart';
+import 'package:rovify/presentation/blocs/splash/splash_cubit.dart';
+
 import 'package:rovify/presentation/routes/app_router.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await FirebaseInitializer.initialize();
+  await FirebaseInitializer.initialize(); // Initializes Firebase
 
   final firebaseAuth = FirebaseAuth.instance;
   final firestore = FirebaseFirestore.instance;
 
-  final authRepository = AuthRepositoryImpl(firebaseAuth, firestore);
-  final eventRemoteDataSource = EventRemoteDataSource(firestore);
-  final eventRepository = EventRepositoryImpl(eventRemoteDataSource);
+  // Repositories
+ final authRepository = AuthRepositoryImpl(
+  firebaseAuth,
+  firestore,
+);
 
+
+  final eventRepository = EventRepositoryImpl(
+    EventRemoteDataSource(firestore),
+  );
+
+  // Use Cases
   final signUpUser = SignUpUser(authRepository);
   final signInUser = SignInUser(authRepository);
-
   final getUpcomingEvents = GetUpcomingEvents(eventRepository);
   final toggleEventFavorite = ToggleEventFavorite(eventRepository);
 
   runApp(
     MultiBlocProvider(
       providers: [
+        BlocProvider(create: (_) => SplashCubit()),
         BlocProvider(
           create: (_) => AuthBloc(
             signUpUser: signUpUser,
@@ -48,7 +64,7 @@ void main() async {
             getUpcomingEvents: getUpcomingEvents,
             toggleEventFavorite: toggleEventFavorite,
             userId: firebaseAuth.currentUser?.uid ?? '',
-          ),
+          )..add(LoadUpcomingEvents()),
         ),
       ],
       child: const RovifyApp(),
@@ -71,22 +87,13 @@ class RovifyApp extends StatelessWidget {
       builder: (context, child) {
         return BlocListener<AuthBloc, AuthState>(
           listener: (context, state) {
-            // Handle navigation when auth state changes
             if (state is Authenticated) {
-              // Redirect to events page after successful login
               AppRouter.router.go('/explore');
+            } else if (state is UnAuthenticated) {
+              AppRouter.router.go('/auth/login');
             }
           },
-          child: StreamBuilder<User?>(
-            stream: FirebaseAuth.instance.authStateChanges(),
-            builder: (context, snapshot) {
-              // Initial route handling
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              return child!;
-            },
-          ),
+          child: child,
         );
       },
     );

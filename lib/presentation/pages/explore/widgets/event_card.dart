@@ -55,6 +55,7 @@ class _EventCardState extends State<EventCard> {
     }
 
     setState(() => isLoadingHost = true);
+
     try {
       final snapshot = await FirebaseFirestore.instance
           .collection('users')
@@ -66,11 +67,11 @@ class _EventCardState extends State<EventCard> {
         isLoadingHost = false;
       });
     } catch (e) {
+      debugPrint('Error fetching host name: $e');
       setState(() {
         hostName = 'Unknown';
         isLoadingHost = false;
       });
-      debugPrint('Error fetching host name: $e');
     }
   }
 
@@ -79,9 +80,9 @@ class _EventCardState extends State<EventCard> {
     final formattedDate = DateFormat('MMM d').format(widget.dateTime);
     final formattedTime = DateFormat('h:mm a').format(widget.dateTime);
     final priceText = widget.price > 0
-    ? 'Kes ${widget.price.toStringAsFixed(2)}' 
-    : 'FREE';
-    
+        ? 'Kes ${widget.price.toStringAsFixed(2)}'
+        : 'FREE';
+
     return GestureDetector(
       onTap: () => _navigateToEventDetails(context),
       child: Container(
@@ -100,160 +101,144 @@ class _EventCardState extends State<EventCard> {
         ),
         child: Row(
           children: [
-            // Thumbnail
-            Container(
-              width: 100,
-              height: 120,
-              decoration: BoxDecoration(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(12),
-                  bottomLeft: Radius.circular(12),
-                ),
-                color: Colors.grey[200],
-              ),
-              child: ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(12),
-                  bottomLeft: Radius.circular(12),
-                ),
-                child: Image.network(
-                  widget.thumbnailUrl,
-                  width: 100,
-                  height: 120,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const Center(
-                    child: Icon(Icons.broken_image, size: 30),
-                  ),
-                ),
-              ),
-            ),
-
-            // Event details
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(10),
-                child: Stack(
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // Title
-                        Text(
-                          widget.title,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            fontFamily: 'Onest',
-                            color: Colors.black,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 6),
-
-                        // Date and time
-                        Row(
-                          children: [
-                            Text(
-                              formattedDate,
-                              style: const TextStyle(
-                                color: Colors.orange,
-                                fontFamily: 'Onest',
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '• $formattedTime',
-                              style: const TextStyle(
-                                color: Colors.orange,
-                                fontFamily: 'Onest',
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-
-                        // Location and host
-                        Text(
-                          '${widget.location} • ${isLoadingHost ? 'Loading...' : 'Hosted by ${hostName ?? 'Unknown'}'}',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontFamily: 'Onest',
-                            fontSize: 11,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-
-                        const SizedBox(height: 6),
-
-                        // Price and category
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              priceText,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'Onest',
-                                fontSize: 13,
-                                color: Colors.orange,
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.grey[100],
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Text(
-                                widget.category,
-                                style: TextStyle(
-                                  color: Colors.grey[800],
-                                  fontFamily: 'Onest',
-                                  fontSize: 11,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-
-                    // Like button
-                    Positioned(
-                      top: 0,
-                      right: 0,
-                      child: IconButton(
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                        icon: Icon(
-                          isLiked ? Icons.favorite : Icons.favorite_border,
-                          color: isLiked ? Colors.red : Colors.black,
-                          size: 20,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            isLiked = !isLiked;
-                          });
-                          // TODO: Implement like functionality
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            _buildThumbnail(),
+            Expanded(child: _buildEventDetails(priceText, formattedDate, formattedTime)),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildThumbnail() {
+    return Container(
+      width: 100,
+      height: 120,
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.horizontal(left: Radius.circular(12)),
+        color: Colors.grey[200],
+      ),
+      child: ClipRRect(
+        borderRadius: const BorderRadius.horizontal(left: Radius.circular(12)),
+        child: Image.network(
+          widget.thumbnailUrl,
+          width: 100,
+          height: 120,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => const Center(
+            child: Icon(Icons.broken_image, size: 30),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEventDetails(String priceText, String formattedDate, String formattedTime) {
+    return Padding(
+      padding: const EdgeInsets.all(10),
+      child: Stack(
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                widget.title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  fontFamily: 'Onest',
+                  color: Colors.black,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Text(
+                    formattedDate,
+                    style: const TextStyle(
+                      color: Colors.orange,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      fontFamily: 'Onest',
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '• $formattedTime',
+                    style: const TextStyle(
+                      color: Colors.orange,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      fontFamily: 'Onest',
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '${widget.location} • ${isLoadingHost ? 'Loading...' : 'Hosted by ${hostName ?? 'Unknown'}'}',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 11,
+                  fontFamily: 'Onest',
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 6),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    priceText,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                      color: Colors.orange,
+                      fontFamily: 'Onest',
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      widget.category,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey[800],
+                        fontFamily: 'Onest',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          Positioned(
+            top: 0,
+            right: 0,
+            child: IconButton(
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+              icon: Icon(
+                isLiked ? Icons.favorite : Icons.favorite_border,
+                color: isLiked ? Colors.red : Colors.black,
+                size: 20,
+              ),
+              onPressed: () {
+                setState(() {
+                  isLiked = !isLiked;
+                });
+                // TODO: Implement like persistence
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

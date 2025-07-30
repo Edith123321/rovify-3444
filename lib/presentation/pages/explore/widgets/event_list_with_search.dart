@@ -13,7 +13,7 @@ class EventListWithSearch extends StatefulWidget {
 
 class _EventListWithSearchState extends State<EventListWithSearch> {
   String _searchQuery = '';
-  String _selectedCategory = 'popular'; // <- Match category value, not label
+  String _selectedCategory = 'popular';
 
   void _handleSearchChanged(String query) {
     setState(() {
@@ -35,66 +35,66 @@ class _EventListWithSearchState extends State<EventListWithSearch> {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Column(
+    final screenHeight = MediaQuery.of(context).size.height;
+    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+
+    return Scaffold(
+      body: SafeArea(
+        child: Stack(
           children: [
-            // Search Bar
-            SearchBarFeature(
-              onSearchChanged: _handleSearchChanged,
-              onClearSearch: _clearSearch,
-              searchQuery: _searchQuery,
-            ),
-
-            // Category Tabs
-            CategoryTabs(
-              selectedCategory: _selectedCategory,
-              onCategorySelected: _handleCategorySelected,
-            ),
-
-            // Filter Chips
-            const FilterChipRow(),
-
-            // "Upcoming Events" title
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 4.0),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Upcoming Events',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'Onest',
-                    color: Colors.black,
+            SingleChildScrollView(
+              padding: const EdgeInsets.only(bottom: 100),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SearchBarFeature(
+                    onSearchChanged: _handleSearchChanged,
+                    onClearSearch: _clearSearch,
+                    searchQuery: _searchQuery,
                   ),
-                ),
+                  CategoryTabs(
+                    selectedCategory: _selectedCategory,
+                    onCategorySelected: _handleCategorySelected,
+                  ),
+                  const FilterChipRow(),
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 4.0),
+                    child: Text(
+                      'Upcoming Events',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Onest',
+                        color: Colors.black,
+                      ),
+                    ),
+                  ),
+                  SizedBox(
+                    height: isLandscape ? screenHeight * 0.6 : screenHeight * 0.4,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: EventList(
+                        searchQuery: _searchQuery,
+                        categoryFilter: _selectedCategory,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
 
-            // Event List with all filters
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: EventList(
-                  searchQuery: _searchQuery,
-                  categoryFilter: _selectedCategory,
-                ),
+            // Floating Nearby Button
+            const Positioned(
+              bottom: 24,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: _FloatingNearbyButton(),
               ),
             ),
           ],
         ),
-
-        // Floating Nearby Button
-        Positioned(
-          bottom: 24,
-          left: 0,
-          right: 0,
-          child: Center(
-            child: _FloatingNearbyButton(),
-          ),
-        ),
-      ],
+      ),
     );
   }
 }

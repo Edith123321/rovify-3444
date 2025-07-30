@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import 'package:rovify/presentation/pages/explore/widgets/location_bar.dart';
 import 'package:rovify/presentation/pages/explore/widgets/event_list_with_search.dart';
-import 'package:rovify/presentation/pages/explore/widgets/bottom_navigation.dart';
 import 'package:rovify/presentation/pages/explore/widgets/profile_drawer.dart';
+import 'package:rovify/presentation/common/bottom_navigation.dart';
+import 'package:rovify/presentation/common/location_bar.dart';
 
 class ExplorePage extends StatelessWidget {
   const ExplorePage({super.key});
@@ -17,8 +17,6 @@ class ExplorePage extends StatelessWidget {
     final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
     return doc.data();
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -47,11 +45,15 @@ class ExplorePage extends StatelessWidget {
           body: SafeArea(
             child: Column(
               children: const [
+                // ✅ Top location bar
                 LocationBar(),
+
+                // ✅ Event list fills remaining space
                 Expanded(child: EventListWithSearch()),
               ],
             ),
           ),
+          // ✅ Bottom navigation bar
           bottomNavigationBar: const BottomNavBar(),
         );
       },
