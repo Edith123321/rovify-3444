@@ -12,6 +12,7 @@ import 'package:rovify/presentation/pages/explore/widgets/creator_dashboard.dart
 import 'package:rovify/presentation/pages/event_form_screen.dart';
 import 'package:rovify/presentation/pages/explore/widgets/become_creator.dart';
 import 'package:rovify/presentation/pages/explore/widgets/profile_update.dart';
+import 'package:rovify/presentation/screens/onboarding/onboarding_screen.dart';
 
 class AppRouter {
   static final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -53,13 +54,13 @@ class AppRouter {
         builder: (context, state) => const SplashScreen(),
       ),
 
-      // /// Onboarding
-      // GoRoute(
-      //   path: '/onboarding',
-      //   name: 'onboarding',
-      //   parentNavigatorKey: _rootNavigatorKey,
-      //   builder: (context, state) => const OnboardingScreen(),
-      // ),
+      /// Onboarding
+      GoRoute(
+        path: '/onboarding',
+        name: 'onboarding',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const OnboardingScreen(),
+      ),
 
       /// Auth Bottom Sheet Routes
       ShellRoute(
