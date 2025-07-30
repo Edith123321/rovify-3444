@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 import 'package:rovify/presentation/pages/explore/widgets/event_card.dart';
 
 class EventList extends StatelessWidget {
@@ -64,12 +65,20 @@ class EventList extends StatelessWidget {
               status: data['status'] ?? 'upcoming',
               ticketType: data['ticketType'] ?? '',
               category: data['category'] ?? '',
-              price: data['price'] ?? '',
+              price: _convertToDouble(data['price']),
             );
           },
         );
       },
     );
+  }
+
+  double _convertToDouble(dynamic price) {
+    if (price == null) return 0.0;
+    if (price is int) return price.toDouble();
+    if (price is double) return price;
+    if (price is String) return double.tryParse(price) ?? 0.0;
+    return 0.0;
   }
 
   List<QueryDocumentSnapshot> _applyFilters(List<QueryDocumentSnapshot> events) {
@@ -83,8 +92,6 @@ class EventList extends StatelessWidget {
         return false;
       }
       
-      // Type filter
-     
       // Search filter
       if (searchQuery.isNotEmpty) {
         final title = data['title']?.toString().toLowerCase() ?? '';

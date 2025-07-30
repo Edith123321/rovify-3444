@@ -91,6 +91,7 @@ class _CreatorDashboardScreenState extends State<CreatorDashboardScreen> {
           child: StreamBuilder<QuerySnapshot>(
             stream: _firestore
                 .collection('events')
+
                 .where('hostID', isEqualTo: widget.userId)
                 .snapshots(),
             builder: (context, snapshot) {
@@ -284,26 +285,23 @@ class _CreatorDashboardScreenState extends State<CreatorDashboardScreen> {
                             fontFamily: 'Onest',
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: Colors.black,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: isPastEvent
-                              ? Colors.white
-                              : Colors.amber,
+                          color: isPastEvent ? Colors.grey : Colors.amber,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           isPastEvent ? 'Completed' : 'Upcoming',
                           style: TextStyle(
                             fontFamily: 'Onest',
-                            color: isPastEvent
-                                ? Colors.white
-                                : Theme.of(context).colorScheme.primary,
+                            color: isPastEvent ? Colors.white : Colors.black,
                           ),
                         ),
                       ),
@@ -313,9 +311,7 @@ class _CreatorDashboardScreenState extends State<CreatorDashboardScreen> {
                   if (dateTime != null)
                     Row(
                       children: [
-                        Icon(Icons.calendar_today,
-                            size: 16,
-                            color: Theme.of(context).colorScheme.secondary),
+                        const Icon(Icons.calendar_today, size: 16),
                         const SizedBox(width: 8),
                         Text(
                           DateFormat('MMM d, y • h:mm a').format(dateTime),
@@ -326,47 +322,80 @@ class _CreatorDashboardScreenState extends State<CreatorDashboardScreen> {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      Icon(Icons.location_on,
-                          size: 16,
-                          color: Theme.of(context).colorScheme.secondary),
+                      const Icon(Icons.location_on, size: 16),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           event['location'] ?? 'Location not specified',
                           style: const TextStyle(fontFamily: 'Onest'),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 12),
-                  StreamBuilder<QuerySnapshot>(
-                    stream: _firestore
-                        .collection('tickets')
-                        .where('eventID', isEqualTo: eventId)
-                        .snapshots(),
-                    builder: (context, snapshot) {
-                      final totalTickets = snapshot.data?.docs.length ?? 0;
-                      final checkedInTickets = snapshot.data?.docs
-                              .where((ticket) =>
-                                  (ticket.data() as Map<String, dynamic>)['isCheckedIn'] == true)
-                              .length ??
-                          0;
+                  // Updated Ticket Stats Section
+                  StreamBuilder<DocumentSnapshot>(
+                    stream: _firestore.collection('events').doc(eventId).snapshots(),
+                    builder: (context, eventSnapshot) {
+                      if (!eventSnapshot.hasData) {
+                        return const CircularProgressIndicator();
+                      }
+                      
+                      final ticketsSold = eventSnapshot.data?['ticketsSold'] ?? 0;
+                      
+                      return StreamBuilder<QuerySnapshot>(
+                        stream: _firestore
+                            .collection('tickets')
+                            .where('eventID', isEqualTo: eventId)
+                            .snapshots(),
+                        builder: (context, ticketSnapshot) {
+                          if (ticketSnapshot.hasError) {
+                            return Text('Error: ${ticketSnapshot.error}');
+                          }
 
-                      return Row(
-                        children: [
-                          _buildTicketStat(
-                            context,
-                            'Total',
-                            totalTickets.toString(),
-                          ),
-                          const SizedBox(width: 16),
-                          _buildTicketStat(
-                            context,
-                            'Checked In',
-                            '$checkedInTickets/$totalTickets',
-                            isCheckedIn: true,
-                          ),
-                        ],
+                          if (!ticketSnapshot.hasData) {
+                            return const CircularProgressIndicator();
+                          }
+
+                          final totalTickets = ticketSnapshot.data!.docs.length;
+                          final checkedInTickets = ticketSnapshot.data!.docs
+                              .where((ticket) => ticket['isCheckedIn'] == true)
+                              .length;
+
+                          return Column(
+                            children: [
+                              Row(
+                                children: [
+                                  _buildTicketStat(
+                                    context,
+                                    'Sold',
+                                    ticketsSold.toString(),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  _buildTicketStat(
+                                    context,
+                                    'Checked In',
+                                    '$checkedInTickets/$totalTickets',
+                                    isCheckedIn: true,
+                                  ),
+                                ],
+                              ),
+                              if (ticketsSold != totalTickets)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 4),
+                                  child: Text(
+                                    'Sync in progress...',
+                                    style: TextStyle(
+                                      color: Colors.orange[800],
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          );
+                        },
                       );
                     },
                   ),
@@ -388,9 +417,7 @@ class _CreatorDashboardScreenState extends State<CreatorDashboardScreen> {
           width: 8,
           height: 8,
           decoration: BoxDecoration(
-            color: isCheckedIn
-                ? Colors.green
-                : Theme.of(context).colorScheme.primary,
+            color: isCheckedIn ? Colors.green : Theme.of(context).colorScheme.primary,
             shape: BoxShape.circle,
           ),
         ),
@@ -530,7 +557,7 @@ class _CreatorDashboardScreenState extends State<CreatorDashboardScreen> {
                       style: const TextStyle(fontFamily: 'Onest'),
                     ),
                     trailing: Text(
-                      ticket['checkInTime'] != null 
+                      ticket['checkInTime'] != null
                           ? DateFormat('h:mm a').format(
                               (ticket['checkInTime'] as Timestamp).toDate())
                           : 'N/A',
@@ -586,10 +613,13 @@ class _CreatorDashboardScreenState extends State<CreatorDashboardScreen> {
             style: ElevatedButton.styleFrom(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
+              ),
             ),
-            
-          ), child: null,
-          )
+            child: const Text(
+              'Create First Event',
+              style: TextStyle(fontFamily: 'Onest'),
+            ),
+          ),
         ],
       ),
     );
@@ -601,8 +631,8 @@ class _CreatorDashboardScreenState extends State<CreatorDashboardScreen> {
 
   void _navigateToEventDetails(String eventId) {
     Navigator.pushNamed(
-      context, 
-      'eventDetails', 
+      context,
+      'eventDetails',
       arguments: {
         'eventId': eventId,
         'userId': widget.userId,

@@ -15,7 +15,7 @@ class EventCard extends StatefulWidget {
   final String description;
   final String status;
   final String ticketType;
-  final  price;
+  final double price;
 
   const EventCard({
     super.key,

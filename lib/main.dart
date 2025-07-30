@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:rovify/core/theme/app_theme.dart';
 import 'package:rovify/data/firebase/firebase_initializer.dart';
 
-import 'package:rovify/data/datasources/auth_remote_datasource.dart';
 import 'package:rovify/data/datasources/event_remote_datasource.dart';
 import 'package:rovify/data/repositories/auth_repository_impl.dart';
 import 'package:rovify/data/repositories/event_repository_impl.dart';

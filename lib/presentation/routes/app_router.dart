@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import 'package:rovify/presentation/screens/splash/splash_screen.dart';
-import 'package:rovify/presentation/screens/onboarding/onboarding_screen.dart';
 import 'package:rovify/presentation/screens/auth/login_bottom_sheet.dart';
 import 'package:rovify/presentation/screens/auth/signup_bottom_sheet.dart';
 import 'package:rovify/presentation/screens/auth/forgotpassword_bottom_sheet.dart';

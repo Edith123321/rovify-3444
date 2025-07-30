@@ -3,7 +3,6 @@ import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-
 class EventDetailsScreen extends StatefulWidget {
   final String eventId;
   final String title;
@@ -17,7 +16,7 @@ class EventDetailsScreen extends StatefulWidget {
   final String status;
   final String ticketType;
   final String? hostName;
-  final  price;
+  final double price;
 
   const EventDetailsScreen({
     super.key,
@@ -46,6 +45,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   String? _walletAddress;
   bool _loadingUserData = true;
   bool _paymentProcessing = false;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   @override
   void initState() {
@@ -55,12 +56,9 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
   Future<void> _fetchUserData() async {
     try {
-      final user = FirebaseAuth.instance.currentUser;
+      final user = _auth.currentUser;
       if (user != null) {
-        final userDoc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .get();
+        final userDoc = await _firestore.collection('users').doc(user.uid).get();
         
         if (userDoc.exists) {
           setState(() {
@@ -80,14 +78,12 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   }
 
   Future<String> _generateQRCode(String ticketId) async {
-    // In production, generate this on your backend with security features
     return 'https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${Uri.encodeComponent(ticketId)}';
   }
 
   Future<bool> _processPayment(double amount) async {
     setState(() => _paymentProcessing = true);
     try {
-      // Simulate payment processing - replace with actual payment gateway integration
       await Future.delayed(const Duration(seconds: 2));
       return true;
     } catch (e) {
@@ -121,7 +117,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   }
 
   Future<void> _bookEvent() async {
-    final user = FirebaseAuth.instance.currentUser;
+    final user = _auth.currentUser;
     if (user == null) {
       _showErrorSnackbar('Please sign in to book tickets');
       return;
@@ -137,20 +133,27 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     try {
       final totalPrice = widget.price * _ticketCount;
 
-      // Step 1: Process payment
+      // 1. Process payment
       final paymentSuccess = await _processPayment(totalPrice);
       if (!paymentSuccess) {
         throw Exception('Payment processing failed');
       }
 
-      // Step 2: Generate ticket ID and QR code
+      // 2. Get event data to verify host
+      final eventDoc = await _firestore.collection('events').doc(widget.eventId).get();
+      if (!eventDoc.exists) {
+        throw Exception('Event not found');
+      }
+
+      final eventHostId = eventDoc['hostID'];
       final ticketId = 'TKT-${DateTime.now().millisecondsSinceEpoch}';
       final qrCodeUrl = await _generateQRCode(ticketId);
 
-      // Step 3: Create ticket document
+      // 3. Prepare ticket data
       final ticketData = {
         'eventID': widget.eventId,
         'userID': user.uid,
+        'eventHostId': eventHostId, // Critical for security rules
         'walletAddress': _walletAddress,
         'qrCodeUrl': qrCodeUrl,
         'metadata': {
@@ -168,21 +171,21 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
         'checkInTime': null,
       };
 
-      // Transaction ensures both writes succeed or fail together
-      await FirebaseFirestore.instance.runTransaction((transaction) async {
+      // 4. Execute transaction
+      await _firestore.runTransaction((transaction) async {
         // Create ticket
-        final ticketRef = FirebaseFirestore.instance.collection('tickets').doc(ticketId);
+        final ticketRef = _firestore.collection('tickets').doc(ticketId);
         transaction.set(ticketRef, ticketData);
 
-        // Update event's tickets count
-        final eventRef = FirebaseFirestore.instance.collection('events').doc(widget.eventId);
+        // Update event ticket count
+        final eventRef = _firestore.collection('events').doc(widget.eventId);
         transaction.update(eventRef, {
           'ticketsSold': FieldValue.increment(_ticketCount),
           'updatedAt': FieldValue.serverTimestamp(),
         });
       });
 
-      // Step 4: Navigate to confirmation
+      // 5. Navigate to confirmation
       if (mounted) {
         Navigator.push(
           context,
@@ -204,7 +207,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
       _showSuccessSnackbar('Ticket booked successfully!');
     } catch (e) {
-      _showErrorSnackbar('Failed to book ticket: $e');
+      _showErrorSnackbar('Failed to book ticket: ${e.toString()}');
+      debugPrint('Ticket booking error: $e');
     } finally {
       if (mounted) {
         setState(() => _isBooking = false);
@@ -463,7 +467,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   }
 
   void _navigateToEditEvent() {
-    // Implement navigation to edit event screen
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -492,7 +495,7 @@ class TicketConfirmationScreen extends StatelessWidget {
   final String qrCodeUrl;
   final String ticketType;
   final int quantity;
-  final  totalPrice;
+  final double totalPrice;
   final String thumbnailUrl;
 
   const TicketConfirmationScreen({
@@ -508,49 +511,16 @@ class TicketConfirmationScreen extends StatelessWidget {
     required this.thumbnailUrl,
   });
 
-  // Future<void> _shareTicket(BuildContext context) async {
-  //   try {
-  //     // In a real app, you would generate a shareable image or PDF
-  //     final text = '''
-  //     🎟️ Your Ticket 🎟️
-      
-  //     Event: $eventTitle
-  //     Date: ${DateFormat('EEEE, MMMM d, y').format(dateTime)}
-  //     Location: $location
-  //     Ticket ID: $ticketId
-  //     Type: $ticketType
-  //     Quantity: $quantity
-  //     Total: Kes ${totalPrice.toStringAsFixed(2)}
-      
-  //     Show this QR code at the entrance:
-  //     $qrCodeUrl
-  //     ''';
-
-  //     await Share.share(text);
-  //   } catch (e) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text('Error sharing ticket: $e')),
-  //     );
-  //   }
-  // }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Ticket Confirmation'),
-        actions: [
-          // IconButton(
-          //   icon: const Icon(Icons.share),
-          //   onPressed: () => _shareTicket(context),
-          // ),
-        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // Event Image
             Container(
               height: 180,
               width: double.infinity,
@@ -563,8 +533,6 @@ class TicketConfirmationScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
-
-            // Confirmation Message
             Text(
               'Your ticket is confirmed!',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
@@ -578,29 +546,12 @@ class TicketConfirmationScreen extends StatelessWidget {
               style: Theme.of(context).textTheme.bodyLarge,
             ),
             const SizedBox(height: 24),
-
-            // QR Code
-            // Container(
-            //   padding: const EdgeInsets.all(16),
-            //   decoration: BoxDecoration(
-            //     border: Border.all(color: Colors.grey.shade300),
-            //     borderRadius: BorderRadius.circular(12),
-            //   ),
-            //   child: QrImageView(
-            //     data: ticketId,
-            //     version: QrVersions.auto,
-            //     size: 200,
-            //     foregroundColor: Colors.black,
-            //   ),
-            // ),
             const SizedBox(height: 16),
             Text(
               'Scan this QR code',
               style: Theme.of(context).textTheme.bodyLarge,
             ),
             const SizedBox(height: 24),
-
-            // Ticket Details
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
@@ -670,14 +621,10 @@ class TicketConfirmationScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 32),
-
-            // View Ticket Button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
-                  // Navigate to full ticket view
-                },
+                onPressed: () {},
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
@@ -698,7 +645,6 @@ class TicketConfirmationScreen extends StatelessWidget {
   }
 }
 
-// Placeholder for edit event screen - implement as needed
 class EditEventScreen extends StatelessWidget {
   final String eventId;
   final String initialTitle;
@@ -709,7 +655,7 @@ class EditEventScreen extends StatelessWidget {
   final String initialCategory;
   final String initialType;
   final String initialTicketType;
-  final initialPrice;
+  final double initialPrice;
 
   const EditEventScreen({
     super.key,

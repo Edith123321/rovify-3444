@@ -127,7 +127,7 @@ class CategoryTab extends StatelessWidget {
       fontFamily: 'Onest',
     );
 
-    return Container(
+    return SizedBox(
       width: isCompact ? 72 : 84,
       child: Column(
         mainAxisSize: MainAxisSize.min,
