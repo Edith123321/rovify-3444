@@ -135,7 +135,7 @@ class _SignUpBottomSheetState extends State<SignUpBottomSheet> {
       listener: (context, state) {
         if (state is Authenticated) {
           Navigator.of(context).popUntil((route) => route.isFirst); // Remove bottom sheet
-          context.go('/home'); // Then go to onboarding screen
+          context.go('/onboarding'); // Then go to onboarding screen
         }
       },
     

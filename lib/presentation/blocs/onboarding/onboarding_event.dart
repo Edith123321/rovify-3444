@@ -42,4 +42,4 @@ class OnboardingNotificationPermission extends OnboardingEvent {
   const OnboardingNotificationPermission(this.granted);
   @override
   List<Object?> get props => [granted];
-} 
+}

@@ -23,6 +23,12 @@ dependencies:
   route_definer: ^1.1.0
   image_picker: ^1.0.4 
   firebase_storage: ^12.4.9
+  geolocator: ^9.0.0
+  geocoding: ^2.0.0
+  dropdown_button2: ^2.0.0
+  shared_preferences: ^2.0.13
+  
+
   
 
 dev_dependencies:

@@ -1,18 +1,19 @@
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:rovify/presentation/common/profile_update.dart';
+import 'package:rovify/presentation/common/settings_privacy.dart';
+import 'package:rovify/presentation/screens/home/home_screen.dart';
+import 'package:rovify/presentation/screens/home/tabs/explore_tab.dart';
+import 'package:rovify/presentation/screens/home/widgets/creator/become_creator.dart';
+import 'package:rovify/presentation/screens/home/widgets/creator/create_event_screen.dart';
+import 'package:rovify/presentation/screens/onboarding/onboarding_screen.dart';
 
 import 'package:rovify/presentation/screens/splash/splash_screen.dart';
 import 'package:rovify/presentation/screens/auth/login_bottom_sheet.dart';
 import 'package:rovify/presentation/screens/auth/signup_bottom_sheet.dart';
 import 'package:rovify/presentation/screens/auth/forgotpassword_bottom_sheet.dart';
-import 'package:rovify/presentation/screens/auth/reset_success_sheet.dart';
-import 'package:rovify/presentation/pages/explore/explore_page.dart';
-import 'package:rovify/presentation/pages/explore/widgets/creator_dashboard.dart';
 import 'package:rovify/presentation/pages/event_form_screen.dart';
-import 'package:rovify/presentation/pages/explore/widgets/become_creator.dart';
-import 'package:rovify/presentation/pages/explore/widgets/profile_update.dart';
-import 'package:rovify/presentation/screens/onboarding/onboarding_screen.dart';
 
 class AppRouter {
   static final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -54,13 +55,20 @@ class AppRouter {
         builder: (context, state) => const SplashScreen(),
       ),
 
-      // /// Onboarding
-      // GoRoute(
-      //   path: '/onboarding',
-      //   name: 'onboarding',
-      //   parentNavigatorKey: _rootNavigatorKey,
-      //   builder: (context, state) => const OnboardingScreen(),
-      // ),
+      /// Onboarding
+      GoRoute(
+        path: '/onboarding',
+        name: 'onboarding',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const OnboardingScreen(),
+      ),
+
+      // Home
+      GoRoute(
+        path: '/home',
+        name: 'home',
+        builder: (context, state) => const HomeScreen(),
+      ),
 
       /// Auth Bottom Sheet Routes
       ShellRoute(
@@ -73,7 +81,7 @@ class AppRouter {
           _buildBottomSheetRoute('/auth/login', const LoginBottomSheet()),
           _buildBottomSheetRoute('/auth/signup', const SignUpBottomSheet()),
           _buildBottomSheetRoute('/auth/forgot-password', const ForgotPasswordBottomSheet()),
-          _buildBottomSheetRoute('/auth/reset-success', const ResetSuccessSheet()),
+          // _buildBottomSheetRoute('/auth/reset-success', const ResetSuccessSheet()),
         ],
       ),
 
@@ -87,7 +95,7 @@ class AppRouter {
           GoRoute(
             path: '/explore',
             name: 'explore',
-            builder: (context, state) => const ExplorePage(),
+            builder: (context, state) => const ExploreTab(),
           ),
           GoRoute(
             path: '/addEvent',
@@ -128,6 +136,12 @@ class AppRouter {
                   ? _unauthenticatedScreen(context, message: 'Please sign in to update profile')
                   : const ProfileUpdatePage();
             },
+          ),
+
+          GoRoute(
+            name: 'settingsPrivacy',
+            path: '/settings',
+            builder: (context, state) => const SettingsPrivacyScreen(),
           ),
         ],
       ),

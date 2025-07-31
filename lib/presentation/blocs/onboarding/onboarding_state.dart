@@ -64,4 +64,4 @@ class OnboardingState extends Equatable {
     notificationGranted,
     completed,
   ];
-} 
+}
