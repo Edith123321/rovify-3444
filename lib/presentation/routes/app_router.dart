@@ -54,13 +54,13 @@ class AppRouter {
         builder: (context, state) => const SplashScreen(),
       ),
 
-      /// Onboarding
-      GoRoute(
-        path: '/onboarding',
-        name: 'onboarding',
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const OnboardingScreen(),
-      ),
+      // /// Onboarding
+      // GoRoute(
+      //   path: '/onboarding',
+      //   name: 'onboarding',
+      //   parentNavigatorKey: _rootNavigatorKey,
+      //   builder: (context, state) => const OnboardingScreen(),
+      // ),
 
       /// Auth Bottom Sheet Routes
       ShellRoute(

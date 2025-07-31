@@ -19,6 +19,9 @@ import 'package:rovify/presentation/blocs/auth/auth_bloc.dart';
 import 'package:rovify/presentation/blocs/auth/auth_state.dart';
 import 'package:rovify/presentation/blocs/events/event_bloc.dart';
 import 'package:rovify/presentation/blocs/splash/splash_cubit.dart';
+import 'package:rovify/presentation/blocs/onboarding/onboarding_bloc.dart';
+import 'package:rovify/presentation/blocs/onboarding/onboarding_state.dart';
+
 
 import 'package:rovify/presentation/routes/app_router.dart';
 

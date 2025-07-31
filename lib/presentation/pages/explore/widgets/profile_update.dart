@@ -43,8 +43,7 @@ class _ProfileUpdatePageState extends State<ProfileUpdatePage> {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       _userId = user.uid;
-      final doc =
-          await FirebaseFirestore.instance.collection('users').doc(_userId).get();
+      final doc = await FirebaseFirestore.instance.collection('users').doc(_userId).get();
       if (doc.exists) {
         final data = doc.data()!;
         setState(() {
@@ -70,8 +69,7 @@ class _ProfileUpdatePageState extends State<ProfileUpdatePage> {
 
       if (pickedImage != null) {
         final file = File(pickedImage.path);
-        final fileName =
-            'avatars/${_userId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+        final fileName = 'avatars/${_userId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
         final ref = FirebaseStorage.instance.ref().child(fileName);
 
         await ref.putFile(file);
@@ -81,9 +79,9 @@ class _ProfileUpdatePageState extends State<ProfileUpdatePage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Image upload failed: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Image upload failed: $e')));
       }
     } finally {
       setState(() => _isUploading = false);
@@ -103,14 +101,14 @@ class _ProfileUpdatePageState extends State<ProfileUpdatePage> {
       });
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile updated successfully')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Profile updated successfully')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to update profile: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to update profile: $e')));
     }
   }
 
@@ -125,9 +123,7 @@ class _ProfileUpdatePageState extends State<ProfileUpdatePage> {
           decoration: const InputDecoration(hintText: 'Enter an interest'),
         ),
         actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           TextButton(
             onPressed: () {
               final newInterest = controller.text.trim();
@@ -152,9 +148,7 @@ class _ProfileUpdatePageState extends State<ProfileUpdatePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Update Profile'),
-        actions: [
-          IconButton(icon: const Icon(Icons.save), onPressed: _updateProfile),
-        ],
+        actions: [IconButton(icon: const Icon(Icons.save), onPressed: _updateProfile)],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -172,8 +166,7 @@ class _ProfileUpdatePageState extends State<ProfileUpdatePage> {
                       backgroundColor: Colors.grey[300],
                       backgroundImage: avatar,
                       child: avatar == null
-                          ? const Icon(Icons.person,
-                              size: 50, color: Colors.grey)
+                          ? const Icon(Icons.person, size: 50, color: Colors.grey)
                           : null,
                     ),
                     Positioned(
@@ -196,18 +189,14 @@ class _ProfileUpdatePageState extends State<ProfileUpdatePage> {
                   labelText: 'Display Name',
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) =>
-                    value == null || value.isEmpty ? 'Enter name' : null,
+                validator: (value) => value == null || value.isEmpty ? 'Enter name' : null,
               ),
               const SizedBox(height: 16),
 
               // Email
               TextFormField(
                 controller: _emailController,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  border: OutlineInputBorder(),
-                ),
+                decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder()),
                 validator: (value) {
                   if (value == null || value.isEmpty) return 'Enter email';
                   if (!value.contains('@')) return 'Invalid email';
@@ -217,8 +206,7 @@ class _ProfileUpdatePageState extends State<ProfileUpdatePage> {
               const SizedBox(height: 16),
 
               // Interests
-              const Text('Interests',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              const Text('Interests', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
@@ -226,23 +214,23 @@ class _ProfileUpdatePageState extends State<ProfileUpdatePage> {
                   ..._interests.map(
                     (interest) => Chip(
                       label: Text(interest),
-                      onDeleted: () =>
-                          setState(() => _interests.remove(interest)),
+                      onDeleted: () => setState(() => _interests.remove(interest)),
                     ),
                   ),
                   ActionChip(
                     avatar: const Icon(Icons.add, color: Colors.blue),
-                    label: const Text('Add Interest',
-                        style: TextStyle(color: Colors.blue)),
+                    label: const Text('Add Interest', style: TextStyle(color: Colors.blue)),
                     onPressed: _showInterestDialog,
-                  )
+                  ),
                 ],
               ),
               const SizedBox(height: 16),
 
               // Wallet Address
-              const Text('Wallet Address',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              const Text(
+                'Wallet Address',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 8),
               Text(
                 _walletAddress.isNotEmpty
@@ -255,14 +243,14 @@ class _ProfileUpdatePageState extends State<ProfileUpdatePage> {
               // Creator switch
               Row(
                 children: [
-                  const Text('Creator Account',
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  const Text(
+                    'Creator Account',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
                   const Spacer(),
                   Switch(
                     value: _isCreator,
-                    onChanged: (value) =>
-                        setState(() => _isCreator = value),
+                    onChanged: (value) => setState(() => _isCreator = value),
                   ),
                 ],
               ),
@@ -271,11 +259,8 @@ class _ProfileUpdatePageState extends State<ProfileUpdatePage> {
               // Submit
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _updateProfile,
-                  child: const Text('Save Changes'),
-                ),
-              )
+                child: ElevatedButton(onPressed: _updateProfile, child: const Text('Save Changes')),
+              ),
             ],
           ),
         ),
